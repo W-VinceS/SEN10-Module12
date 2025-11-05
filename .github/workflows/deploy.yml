@@ -1,32 +1,39 @@
-name: Lint and Deploy Static Site
+name: Lint, Test, and Deploy
 
 on:
   push:
-    branches:
-      - main  # triggers when you push to main branch
+    branches: [main]
 
 jobs:
-  build-and-deploy:
+  lint:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: npm install
+      - run: npm run lint
 
-      - name: Install ESLint
-        run: npm install eslint --save-dev
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm test
 
-      - name: Run ESLint check
-        run: npx eslint script.js
-
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
       - name: Deploy to GitHub Pages
-        if: success()
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
